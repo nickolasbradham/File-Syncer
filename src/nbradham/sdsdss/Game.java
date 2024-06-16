@@ -1,6 +1,8 @@
 package nbradham.sdsdss;
 
-record Game(String name) {
+import java.io.File;
+
+record Game(String name, File deckDir, File sdDir) {
 
 	@Override
 	public String toString() {
