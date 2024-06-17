@@ -116,6 +116,7 @@ final class Syncer {
 					gameCombo.addItem(new Game(nameField.getText(), deckDS.getFile(), sdDS.getFile()));
 					gameRemove.setEnabled(true);
 					writeChanges();
+					detectTransferDir();
 					mainFrame.pack();
 					diag.dispose();
 				});
@@ -128,6 +129,11 @@ final class Syncer {
 				gameCombo.removeItemAt(gameCombo.getSelectedIndex());
 				checkEmptyList();
 				writeChanges();
+				if (gameCombo.getItemAt(0) == EMPTY_LIST) {
+					toDeck.setEnabled(false);
+					toSD.setEnabled(false);
+				}
+				mainFrame.pack();
 			});
 			gamePane.add(gameRemove);
 			gbc.gridx = 1;
@@ -158,12 +164,13 @@ final class Syncer {
 	private void writeChanges() {
 		try {
 			PrintWriter fos = new PrintWriter(CONFIG);
-			for (byte i = 0; i < gameCombo.getItemCount(); ++i) {
-				Game g = gameCombo.getItemAt(i);
-				fos.println(g.name());
-				fos.println(g.deckDir());
-				fos.println(g.sdDir());
-			}
+			if (gameCombo.getItemAt(0) != EMPTY_LIST)
+				for (byte i = 0; i < gameCombo.getItemCount(); ++i) {
+					Game g = gameCombo.getItemAt(i);
+					fos.println(g.name());
+					fos.println(g.deckDir());
+					fos.println(g.sdDir());
+				}
 			fos.close();
 		} catch (FileNotFoundException e1) {
 			e1.printStackTrace();
