@@ -179,22 +179,18 @@ final class Syncer {
 
 	private void detectTransferDir() {
 		Game g = (Game) gameCombo.getSelectedItem();
-		if (g == EMPTY_LIST) {
-			toSD.setEnabled(false);
-			toDeck.setEnabled(false);
-		} else {
-			toSD.setEnabled(true);
-			toDeck.setEnabled(true);
+		boolean enable = g != EMPTY_LIST;
+		toSD.setEnabled(enable);
+		toDeck.setEnabled(enable);
+		if (enable)
 			if (getLastModified(g.deckDir()) > getLastModified(g.sdDir()))
 				toSD.setSelected(true);
 			else
 				toDeck.setSelected(true);
-		}
 	}
 
 	private static long getLastModified(File dir) {
 		long latest = -1;
-		System.out.println(dir);
 		File[] files = dir.listFiles();
 		if (files != null)
 			for (File f : files)
