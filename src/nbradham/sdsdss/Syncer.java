@@ -55,6 +55,7 @@ final class Syncer {
 			} catch (FileNotFoundException e) {
 			}
 			checkEmptyList();
+			gameCombo.addActionListener(e -> detectTransferDir());
 			gamePane.add(gameCombo);
 			JButton gameAdd = new JButton("+");
 			gameAdd.addActionListener(e -> {
@@ -179,7 +180,7 @@ final class Syncer {
 
 	private void detectTransferDir() {
 		Game g = (Game) gameCombo.getSelectedItem();
-		boolean enable = g != EMPTY_LIST;
+		boolean enable = g != null && g != EMPTY_LIST;
 		toSD.setEnabled(enable);
 		toDeck.setEnabled(enable);
 		if (enable)
