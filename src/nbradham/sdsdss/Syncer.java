@@ -89,7 +89,8 @@ final class Syncer {
 			try {
 				Scanner scan = new Scanner(CONFIG).useDelimiter("\n");
 				while (scan.hasNext())
-					gameCombo.addItem(new Game(scan.next().strip(), new File(scan.next().strip()), new File(scan.next().strip())));
+					gameCombo.addItem(new Game(scan.next().strip(), new File(scan.next().strip()),
+							new File(scan.next().strip())));
 				scan.close();
 			} catch (FileNotFoundException e) {
 			}
@@ -161,6 +162,7 @@ final class Syncer {
 				});
 				diag.add(ok, gc);
 				diag.pack();
+				diag.setMinimumSize(diag.getSize());
 				diag.setVisible(true);
 			});
 			gamePane.add(gameAdd);
@@ -189,6 +191,7 @@ final class Syncer {
 			gbc.insets = IN_TEXT;
 			mainFrame.add(stat, gbc);
 			mainFrame.pack();
+			mainFrame.setMinimumSize(mainFrame.getSize());
 			mainFrame.setVisible(true);
 		});
 	}
@@ -237,10 +240,10 @@ final class Syncer {
 		long latest = -1;
 		Queue<File> q = new LinkedList<>();
 		q.offer(dir);
-		while(!q.isEmpty()) {
+		while (!q.isEmpty()) {
 			File f = q.poll();
-			if(f.isDirectory())
-				for(File t : f.listFiles())
+			if (f.isDirectory())
+				for (File t : f.listFiles())
 					q.offer(t);
 			else
 				latest = Math.max(latest, f.lastModified());
