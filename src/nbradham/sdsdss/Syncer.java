@@ -122,7 +122,7 @@ final class Syncer {
 				gc.anchor = GridBagConstraints.EAST;
 				diag.add(new JLabel("Game Name:"), gc);
 				gc.gridy = 1;
-				diag.add(new JLabel("Deck Save Directory:"), gc);
+				diag.add(new JLabel("Local Save Directory:"), gc);
 				gc.gridy = 2;
 				diag.add(new JLabel("External Save Directory"), gc);
 				gc.gridx = 1;
