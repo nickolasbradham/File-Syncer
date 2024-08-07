@@ -17,6 +17,7 @@ final class DirectorySelector {
 
 	DirectorySelector(String jfcTitle, Component parent) {
 		field.setEditable(false);
+		field.setFocusable(false);
 		jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		jfc.setDialogTitle(jfcTitle);
 		pane.add(field);
@@ -44,5 +45,9 @@ final class DirectorySelector {
 
 	File getFile() {
 		return jfc.getSelectedFile();
+	}
+
+	void clear() {
+		field.setText("");
 	}
 }

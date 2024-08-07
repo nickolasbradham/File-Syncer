@@ -20,20 +20,18 @@ import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 
 final class Syncer {
 
-	private static final Insets DEF_INSETS = new Insets(5, 5, 5, 5);
-	private static final Game EMPTY_LIST = new Game("You need to add a game >>", null, null);
+	static final Insets DEF_INSETS = new Insets(5, 5, 5, 5);
+	static final Game EMPTY_LIST = new Game("You need to add a game >>", null, null);
+
 	private static final File CONFIG = new File("sync.cfg");
 
 	private final JComboBox<Game> gameCombo = new JComboBox<>();
@@ -43,6 +41,35 @@ final class Syncer {
 
 	JFrame mainFrame = new JFrame("Save Syncer");
 
+	private AddDialog diag;
+
+	void writeChanges() {
+		try {
+			PrintWriter fos = new PrintWriter(CONFIG);
+			if (gameCombo.getItemAt(0) != EMPTY_LIST)
+				for (byte i = 0; i < gameCombo.getItemCount(); ++i) {
+					Game g = gameCombo.getItemAt(i);
+					fos.println(g.name().strip());
+					fos.println(g.deckDir());
+					fos.println(g.sdDir());
+				}
+			fos.close();
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		}
+	}
+
+	void detectTransferDir() {
+		Game g = (Game) gameCombo.getSelectedItem();
+		boolean enable = g != null && g != EMPTY_LIST;
+		setTransferEnabled(enable);
+		if (enable)
+			if (getLastModified(g.deckDir()) > getLastModified(g.sdDir()))
+				toSD.setSelected(true);
+			else
+				toDeck.setSelected(true);
+	}
+
 	private void start() {
 		SwingUtilities.invokeLater(() -> {
 			mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -50,6 +77,7 @@ final class Syncer {
 			JButton gameAdd = new JButton("+");
 			JTextField stat = new JTextField("Ready.", 13);
 			stat.setEditable(false);
+			stat.setFocusable(false);
 			go.setEnabled(false);
 			go.addActionListener(e -> {
 				setTransferEnabled(false);
@@ -113,77 +141,10 @@ final class Syncer {
 			gameCombo.addActionListener(e -> detectTransferDir());
 			gamePane.add(gameCombo);
 			gameAdd.addActionListener(e -> {
-				JDialog diag = new JDialog(mainFrame, true);
-				diag.setLayout(new GridBagLayout());
-				diag.setTitle("Add Game");
-				GridBagConstraints gc = new GridBagConstraints();
-				gc.gridx = 0;
-				gc.gridy = 0;
-				gc.anchor = GridBagConstraints.EAST;
-				diag.add(new JLabel("Game Name:"), gc);
-				gc.gridy = 1;
-				diag.add(new JLabel("Local Save Directory:"), gc);
-				gc.gridy = 2;
-				diag.add(new JLabel("External Save Directory"), gc);
-				gc.gridx = 1;
-				gc.gridy = 0;
-				gc.anchor = GridBagConstraints.WEST;
-				gc.insets = new Insets(4, 4, 0, 0);
-				JTextField nameField = new JTextField(25);
-				DirectorySelector deckDS = new DirectorySelector("Select LOCAL save directory.", diag),
-						sdDS = new DirectorySelector("Select EXTERNAL save directory.", diag);
-				JButton ok = new JButton("Add Game");
-				Runnable okCheck = () -> {
-					ok.setEnabled(!nameField.getText().isBlank() && deckDS.isDirSelected() && sdDS.isDirSelected());
-				};
-				nameField.getDocument().addDocumentListener(new DocumentListener() {
-					@Override
-					public void insertUpdate(DocumentEvent e) {
-						okCheck.run();
-					}
-
-					@Override
-					public void removeUpdate(DocumentEvent e) {
-						okCheck.run();
-					}
-
-					@Override
-					public void changedUpdate(DocumentEvent e) {
-						okCheck.run();
-					}
-				});
-				deckDS.setOnSelect(okCheck);
-				sdDS.setOnSelect(okCheck);
-				diag.add(nameField, gc);
-				gc.insets = DEF_INSETS;
-				gc.gridy = 1;
-				diag.add(deckDS.getPane(), gc);
-				gc.gridy = 2;
-				diag.add(sdDS.getPane(), gc);
-				gc.gridx = 0;
-				gc.gridy = 3;
-				gc.anchor = GridBagConstraints.CENTER;
-				gc.gridwidth = 2;
-				ok.setEnabled(false);
-				ok.addActionListener(ev -> {
-					if (gameCombo.getItemAt(0) == EMPTY_LIST)
-						gameCombo.removeItemAt(0);
-					gameCombo.addItem(new Game(nameField.getText(), deckDS.getFile(), sdDS.getFile()));
-					gameRemove.setEnabled(true);
-					writeChanges();
-					detectTransferDir();
-					mainFrame.pack();
-					diag.dispose();
-				});
-				JPanel btnBar = new JPanel(new BorderLayout(50, 0));
-				btnBar.add(ok, BorderLayout.CENTER);
-				JButton cancel = new JButton("Cancel");
-				cancel.addActionListener(a -> diag.dispose());
-				btnBar.add(cancel, BorderLayout.LINE_END);
-				diag.add(btnBar, gc);
-				diag.pack();
-				diag.setMinimumSize(diag.getSize());
-				diag.setVisible(true);
+				if(diag == null)
+					diag = new AddDialog(mainFrame, this);
+				else
+					diag.clearAndShow();
 			});
 			gamePane.add(gameAdd);
 			gameRemove.addActionListener(e -> {
@@ -209,8 +170,8 @@ final class Syncer {
 			gbc.insets = DEF_INSETS;
 			mainFrame.add(dirPane, gbc);
 			JPanel actBar = new JPanel(new BorderLayout(10, 0));
-			actBar.add(stat, BorderLayout.LINE_START);
 			actBar.add(go, BorderLayout.CENTER);
+			actBar.add(stat, BorderLayout.LINE_START);
 			JButton exit = new JButton("Exit");
 			exit.addActionListener(e -> mainFrame.dispose());
 			actBar.add(exit, BorderLayout.LINE_END);
@@ -230,33 +191,6 @@ final class Syncer {
 			gameCombo.addItem(EMPTY_LIST);
 			gameRemove.setEnabled(false);
 		}
-	}
-
-	private void writeChanges() {
-		try {
-			PrintWriter fos = new PrintWriter(CONFIG);
-			if (gameCombo.getItemAt(0) != EMPTY_LIST)
-				for (byte i = 0; i < gameCombo.getItemCount(); ++i) {
-					Game g = gameCombo.getItemAt(i);
-					fos.println(g.name().strip());
-					fos.println(g.deckDir());
-					fos.println(g.sdDir());
-				}
-			fos.close();
-		} catch (FileNotFoundException e1) {
-			e1.printStackTrace();
-		}
-	}
-
-	private void detectTransferDir() {
-		Game g = (Game) gameCombo.getSelectedItem();
-		boolean enable = g != null && g != EMPTY_LIST;
-		setTransferEnabled(enable);
-		if (enable)
-			if (getLastModified(g.deckDir()) > getLastModified(g.sdDir()))
-				toSD.setSelected(true);
-			else
-				toDeck.setSelected(true);
 	}
 
 	private void setTransferEnabled(boolean enabled) {
@@ -287,5 +221,13 @@ final class Syncer {
 
 	public static void main(String[] args) {
 		new Syncer().start();
+	}
+
+	JComboBox<Game> getGameCombo() {
+		return gameCombo;
+	}
+
+	JButton getGameRemove() {
+		return gameRemove;
 	}
 }
