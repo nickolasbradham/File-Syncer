@@ -1,5 +1,6 @@
 package nbradham.sdsdss;
 
+import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -30,7 +31,7 @@ import javax.swing.event.DocumentListener;
 
 final class Syncer {
 
-	private static final Insets IN_DEF = new Insets(0, 0, 0, 0), IN_TEXT = new Insets(4, 4, 0, 0);
+	private static final Insets DEF_INSETS = new Insets(5, 5, 5, 5);
 	private static final Game EMPTY_LIST = new Game("You need to add a game >>", null, null);
 	private static final File CONFIG = new File("sync.cfg");
 
@@ -76,12 +77,11 @@ final class Syncer {
 				}).start();
 			});
 			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.insets = DEF_INSETS;
 			gbc.gridx = 0;
 			gbc.gridy = 0;
 			gbc.anchor = GridBagConstraints.EAST;
 			mainFrame.add(new JLabel("Select Game:"), gbc);
-			gbc.gridy = 2;
-			mainFrame.add(go, gbc);
 			gbc.gridy = 1;
 			gbc.anchor = GridBagConstraints.NORTHEAST;
 			mainFrame.add(new JLabel("Overwrite Direction:"), gbc);
@@ -113,7 +113,7 @@ final class Syncer {
 				gc.gridx = 1;
 				gc.gridy = 0;
 				gc.anchor = GridBagConstraints.WEST;
-				gc.insets = IN_TEXT;
+				gc.insets = new Insets(4, 4, 0, 0);
 				JTextField nameField = new JTextField(25);
 				DirectorySelector deckDS = new DirectorySelector("Select DECK save directory.", diag),
 						sdDS = new DirectorySelector("Select EXTERNAL save directory.", diag);
@@ -140,7 +140,7 @@ final class Syncer {
 				deckDS.setOnSelect(okCheck);
 				sdDS.setOnSelect(okCheck);
 				diag.add(nameField, gc);
-				gc.insets = IN_DEF;
+				gc.insets = DEF_INSETS;
 				gc.gridy = 1;
 				diag.add(deckDS.getPane(), gc);
 				gc.gridy = 2;
@@ -160,7 +160,12 @@ final class Syncer {
 					mainFrame.pack();
 					diag.dispose();
 				});
-				diag.add(ok, gc);
+				JPanel btnBar = new JPanel(new BorderLayout(50, 0));
+				btnBar.add(ok, BorderLayout.CENTER);
+				JButton cancel = new JButton("Cancel");
+				cancel.addActionListener(a -> diag.dispose());
+				btnBar.add(cancel, BorderLayout.LINE_END);
+				diag.add(btnBar, gc);
 				diag.pack();
 				diag.setMinimumSize(diag.getSize());
 				diag.setVisible(true);
@@ -186,10 +191,19 @@ final class Syncer {
 			dirPane.add(toDeck);
 			dirPane.add(toSD);
 			gbc.gridy = 1;
+			gbc.insets = DEF_INSETS;
 			mainFrame.add(dirPane, gbc);
+			JPanel actBar = new JPanel(new BorderLayout(10, 0));
+			actBar.add(stat, BorderLayout.LINE_START);
+			actBar.add(go, BorderLayout.CENTER);
+			JButton exit = new JButton("Exit");
+			exit.addActionListener(e -> mainFrame.dispose());
+			actBar.add(exit, BorderLayout.LINE_END);
+			gbc.gridwidth = 2;
+			gbc.gridx = 0;
 			gbc.gridy = 2;
-			gbc.insets = IN_TEXT;
-			mainFrame.add(stat, gbc);
+			gbc.fill = GridBagConstraints.HORIZONTAL;
+			mainFrame.add(actBar, gbc);
 			mainFrame.pack();
 			mainFrame.setMinimumSize(mainFrame.getSize());
 			mainFrame.setVisible(true);
