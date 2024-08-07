@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Scanner;
@@ -47,17 +48,31 @@ final class Syncer {
 			mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			mainFrame.setLayout(new GridBagLayout());
 			JButton gameAdd = new JButton("+");
-			JTextField stat = new JTextField("Ready.");
+			JTextField stat = new JTextField("Ready.", 13);
 			stat.setEditable(false);
 			go.setEnabled(false);
 			go.addActionListener(e -> {
 				setTransferEnabled(false);
-				stat.setText("Working...");
+				SwingUtilities.invokeLater(() -> stat.setText("Working..."));
 				new Thread(() -> {
 					Game g = (Game) gameCombo.getSelectedItem();
 					boolean toLoc = toDeck.isSelected();
+					FileOp rootDir = new FileOp(toLoc ? g.sdDir() : g.deckDir(), toLoc ? g.deckDir() : g.sdDir());
+					SwingUtilities.invokeLater(() -> stat.setText("Clearing destination..."));
+					Queue<File> del = new LinkedList<>();
+					for (File f : rootDir.dest().listFiles())
+						del.offer(f);
+					while (!del.isEmpty()) {
+						File f = del.poll();
+						if (!f.delete()) {
+							for (File cf : f.listFiles())
+								del.offer(cf);
+							del.offer(f);
+						}
+					}
+					SwingUtilities.invokeLater(() -> stat.setText("Copying from source..."));
 					Queue<FileOp> q = new LinkedList<>();
-					q.offer(new FileOp(toLoc ? g.sdDir() : g.deckDir(), toLoc ? g.deckDir() : g.sdDir()));
+					q.offer(rootDir);
 					while (!q.isEmpty()) {
 						FileOp fo = q.poll();
 						File src = fo.src(), dest = fo.dest();
@@ -115,7 +130,7 @@ final class Syncer {
 				gc.anchor = GridBagConstraints.WEST;
 				gc.insets = new Insets(4, 4, 0, 0);
 				JTextField nameField = new JTextField(25);
-				DirectorySelector deckDS = new DirectorySelector("Select DECK save directory.", diag),
+				DirectorySelector deckDS = new DirectorySelector("Select LOCAL save directory.", diag),
 						sdDS = new DirectorySelector("Select EXTERNAL save directory.", diag);
 				JButton ok = new JButton("Add Game");
 				Runnable okCheck = () -> {
@@ -260,7 +275,12 @@ final class Syncer {
 				for (File t : f.listFiles())
 					q.offer(t);
 			else
-				latest = Math.max(latest, f.lastModified());
+				try {
+					latest = Math.max(latest, Math.max(f.lastModified(),
+							Files.readAttributes(f.toPath(), BasicFileAttributes.class).creationTime().toMillis()));
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 		}
 		return latest;
 	}

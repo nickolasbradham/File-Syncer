@@ -20,7 +20,7 @@ final class DirectorySelector {
 		jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		jfc.setDialogTitle(jfcTitle);
 		pane.add(field);
-		JButton browse = new JButton("Browse");
+		JButton browse = new JButton("Browse...");
 		browse.addActionListener(e -> {
 			if (jfc.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) {
 				field.setText(jfc.getSelectedFile().toString());
