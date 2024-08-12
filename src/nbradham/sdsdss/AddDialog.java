@@ -93,11 +93,13 @@ final class AddDialog {
 		diag.add(btnBar, gc);
 		diag.pack();
 		diag.setMinimumSize(diag.getSize());
+		diag.setVisible(true);
 	}
 
 	void clearAndShow() {
 		nameField.setText("");
 		deckDS.clear();
 		sdDS.clear();
+		diag.setVisible(true);
 	}
 }
